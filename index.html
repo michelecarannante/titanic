@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pesciolini nel Mare</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #e572b0; /* Colore di fallback */
+    }
+    canvas {
+      display: block;
+    }
+    .shapes {
+      width: 100vw;
+      height: 100vh;
+      background: url('https://images.unsplash.com/photo-1518920737602-f88f53ed0da6') no-repeat center center fixed;
+      background-size: cover;
+    }
+  </style>
+</head>
+<body>
+  <div class="shapes"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
+  <script>
+    // Inizializzazione Matter.js
+    const { Engine, Render, Bodies, World, MouseConstraint, Mouse } = Matter;
+
+    var sectionTag = document.querySelector(".shapes");
+    let w = sectionTag.offsetWidth;
+    let h = sectionTag.offsetHeight;
+
+    const engine = Engine.create();
+    engine.world.gravity.x = 0;
+    engine.world.gravity.y = 0.001;
+    engine.world.gravity.scale = 0.1;
+
+    var renderer = Render.create({
+      element: sectionTag,
+      engine: engine,
+      options: {
+        width: w,
+        height: h,
+        background: "transparent",
+        wireframes: false,
+        pixelRatio: window.devicePixelRatio
+      }
+    });
+
+    // Creazione delle pareti del contenitore
+    const wallOptions = {
+      isStatic: true,
+      render: { visible: true, fillStyle: "#e572b0" },
+      friction: 0,
+      restitution: 1.1
+    };
+
+    const ceiling = Bodies.rectangle(w / 2, -1, w, 50, wallOptions);
+    const ground = Bodies.rectangle(w / 2, h + 50, w, 50, wallOptions);
+    const leftWall = Bodies.rectangle(-50, h / 2, 50, h, wallOptions);
+    const rightWall = Bodies.rectangle(w + 50, h / 2, 50, h, wallOptions);
+
+    const mouseControl = MouseConstraint.create(engine, {
+      element: sectionTag,
+      constraint: { render: { visible: false } }
+    });
+
+    World.add(engine.world, [ground, ceiling, leftWall, rightWall, mouseControl]);
+
+    // Caricamento delle immagini dei pesci
+    var fishImage1 = "https://www.scillacariddirentalboat.it/wp-content/uploads/2024/11/fish-svgrepo-com.jpg";
+    var fishImage2 = "https://www.scillacariddirentalboat.it/wp-content/uploads/2024/11/Progetto-senza-titolo.png";
+    var color = "#9bc459"; // Colore di riempimento delle "palle" che diventeranno pesci
+
+    // Calcolo del numero di pesci
+    var peasize = 1225;
+    var width = window.innerWidth;
+    var height = window.innerHeight;
+    var area = width * height;
+    var areatocover = area * 0.85;
+    var numberofpeas = areatocover / peasize;
+
+    // Funzione per selezionare casualmente una delle due immagini dei pesci
+    function getRandomFishImage() {
+      return Math.random() < 0.5 ? fishImage1 : fishImage2;
+    }
+
+    // Funzione per determinare la scala in base all'immagine
+    function getScaleFactor(image) {
+      if (image === fishImage2) {
+        // Pesci più piccoli per la seconda immagine
+        return 0.05; // Scala più piccola per il secondo pesce
+      }
+      return 0.13; // Scala maggiore per il primo pesce
+    }
+
+    // Creazione dei pesci in posizioni casuali
+    for (let i = 0; i < numberofpeas; i++) {
+      var radius = Math.random() * 25 + 10;
+      var posx = Math.random() * (w - radius * 2) + radius;
+      var posy = Math.random() * (h - radius * 2) + radius;
+      var selectedFishImage = getRandomFishImage(); // Seleziona casualmente l'immagine del pesce
+      var scaleFactor = getScaleFactor(selectedFishImage); // Determina la scala in base all'immagine
+
+      // Creazione dei pesci con una delle due immagini
+      World.add(engine.world, Bodies.circle(
+        posx, posy, radius, {
+          frictionAir: 0,
+          frictionStatic: 0,
+          friction: 0,
+          restitution: 1.01,
+          mass: 1,
+          slop: 0,
+          render: {
+            fillStyle: color,
+            sprite: {
+              texture: selectedFishImage,
+              xScale: scaleFactor,
+              yScale: scaleFactor
+            }
+          }
+        }
+      ));
+    }
+
+    Matter.Runner.run(engine);
+    Matter.Render.run(renderer);
+
+    // Aggiornamento delle dimensioni e del rendering
+    window.addEventListener('resize', () => {
+      renderer.bounds.max.x = sectionTag.clientWidth;
+      renderer.bounds.max.y = sectionTag.clientHeight;
+      renderer.options.width = sectionTag.clientWidth;
+      renderer.options.height = sectionTag.clientHeight;
+      renderer.canvas.width = sectionTag.clientWidth;
+      renderer.canvas.height = sectionTag.clientHeight;
+      Matter.Render.setPixelRatio(renderer, window.devicePixelRatio);
+
+      Matter.Body.setPosition(ground, Matter.Vector.create(sectionTag.clientWidth / 2, sectionTag.clientHeight + 50 / 2));
+      Matter.Body.setPosition(rightWall, Matter.Vector.create(sectionTag.clientWidth + 50 / 2, sectionTag.clientHeight / 2));
+    });
+  </script>
+</body>
+</html>
